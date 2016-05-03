@@ -77,9 +77,9 @@ int main (int argc, const char * argv[]){
 		cout<<hex<<opcode;
 		mac.pc +=2;
 		if ((mac.pc) == MEMSIZE){
-			mac.pc = 0;
+			//mac.pc = 0;
 			//DEBUG ONLY!!!
-			//quit=1;
+			quit=1;
 		}
 
 		uint16_t nnn = opcode & 0x0FFF;
@@ -165,8 +165,83 @@ int main (int argc, const char * argv[]){
 					case 0xE:
 						cout<<"SHL "<<x<<" "<<y<<endl;
 					break;
+
+				}
+
+			break;
+
+			case 9:
+				cout<<"SNE "<<x<<" "<<y<<endl;
+			break;
+
+			case 0xA:
+				cout<<"LD I"<<" "<< nnn <<endl;
+			break;
+
+			case 0xB:
+				cout<<"JP V0 "<< nnn << endl;
+			break;
+
+			case 0xC:
+				cout<<"RND "<< x << " " << kk<<endl;
+			break;
+
+			case 0xD:
+				cout<<"DRW "<<x<<" "<<y<<" "<<n<<endl;
+			break;
+			
+			case 0xE:
+				switch(kk){
+					case 0x9e:
+						cout << "SKP "<< x<<endl;					
+					break;
+
+					case 0xA1:
+						cout<<"SKNP "<<x<<endl;
+					break;
 				}
 			break;
+
+			case 0xF:
+				switch (kk){
+					case 0x07:
+						cout<<"LD "<<x <<" dt" << endl;
+					break;
+
+					case 0x0A:
+						cout<<"LD "<<x<<endl;
+					break;
+
+					case 0x15:
+						cout<<"LD "<<"dt "<<x<<endl;
+					break;
+
+					case 0x18:
+						cout<<"LD "<<"st "<<x<<endl;
+					break;
+
+					case 0x1E:
+						cout <<"ADD "<< "i " << x<<endl;
+					break;
+
+					case 0x29:
+						cout<<"LD F "<< x << endl;
+					break;
+
+					case 0x33:
+						cout<<"LD B "<< x<<endl;
+					break;
+
+					case 0x55:
+						cout<<"LD I "<<x<<endl;
+					break;
+
+					case 0x65:
+						cout<<"LD "<<x<<" I"<<endl;
+					break;
+				}
+			break;
+
 		}
 	}	
 	return 0;
