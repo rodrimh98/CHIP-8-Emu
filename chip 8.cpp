@@ -109,7 +109,63 @@ int main (int argc, const char * argv[]){
 			break;
 
 			case 3: 
-				cout<<"SE "<< x << kk <<endl;
+				cout<<"SE "<< x <<" "<< kk <<endl;
+			break;
+
+			case 4:
+				cout<<"SNE "<<x<<" " <<kk<<endl; 
+			break;
+
+			case 5:
+				cout<<"SE"<<x<<" "<<y<<endl;
+			break;
+
+			case 6:
+				cout<<"LD "<< x <<" "<<kk<<endl;
+			break;
+
+			case 7:
+				cout<<"ADD "<< x << " "<< kk<<endl;
+			break;
+
+			case 8:
+				switch (n){
+					case 0:
+						cout<<"LD "<<x<<y<<endl;
+					break;
+
+					case 1:
+						cout<<"OR "<<x<<" "<<y<<endl;
+					break;
+
+					case 2:
+						cout<<"AND "<<x<<" "<<y<<endl;
+					break;
+
+					case 3:
+						cout<<"XOR "<<x<<" "<<y<<endl;
+					break;
+
+					case 4:
+						cout<<"ADD "<<x<<" "<<y<<endl;
+					break;
+
+					case 5:
+						cout<<"SUB "<<x<<" "<<y<<endl;
+					break;
+
+					case 6:
+						cout<<"SHR "<<x<< " "<<y<<endl;
+					break;
+
+					case 7:
+						cout<<"SUBN "<<x<<" "<<y<<endl;
+					break;
+
+					case 0xE:
+						cout<<"SHL "<<x<<" "<<y<<endl;
+					break;
+				}
 			break;
 		}
 	}	
