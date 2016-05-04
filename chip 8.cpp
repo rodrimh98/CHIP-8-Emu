@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <cstdio>
 #include <stdlib.h>
-
+#include <string.h>
 using namespace std;
 
 #define MEMSIZE 4096
@@ -21,16 +21,9 @@ struct machine_t {
 
 void init_machine (struct machine_t* machine){
 
-	machine->sp = machine ->i = machine->dt = machine->st = 0x00;
-	machine->pc = 0x200;
-	for (int i = 0; i<MEMSIZE; i++)
-		machine->mem[i]=0x00;
-
-	for (int i = 0; i<16; i++){
-		machine->stack[i] = 0x00;
-		machine->v[i]= 0x00;
+	memset (machine, 0, sizeof(machine_t));
+	machine->pc=0x200;
 	}
-}
 static int load_rom (struct machine_t* machine){
 
 	FILE* fp = fopen ("PONG", "rb");
@@ -58,30 +51,13 @@ static int load_rom (struct machine_t* machine){
 
 
 
-int main (int argc, const char * argv[]){
-	struct machine_t mac;
-	init_machine(&mac);
-	load_rom(&mac);
-	//mac.pc = 0;
-	cout<<"PC: "<<hex<<mac.pc<<endl;
+void stepmachine (struct machine_t* cpu){
+		uint16_t opcode;
+		opcode = cpu->mem[cpu->pc] << 8 | cpu->mem[cpu->pc + 0x1];
 
-	cout<<"&mac "<<&mac<<endl;
-	uint16_t opcode;
-	cout<<"Hex dump: \n";
-
-	// main loop
-	int quit = 0;
-	while (!quit){
-
-		opcode = mac.mem[mac.pc] << 8 | mac.mem[mac.pc + 1];
-		cout<<hex<<opcode;
-		mac.pc +=2;
-		if ((mac.pc) == MEMSIZE){
-			//mac.pc = 0;
-			//DEBUG ONLY!!!
-			quit=1;
-		}
-
+		cout<<hex<<opcode<<endl;
+		cpu->pc = (cpu->pc + 0x2)&0xfff;
+		cout<<cpu->pc<<endl;
 		uint16_t nnn = opcode & 0x0FFF;
 		uint8_t kk = opcode & 0xFF;
 		uint8_t n = opcode & 0xF;
@@ -98,72 +74,97 @@ int main (int argc, const char * argv[]){
 				else if (opcode == 0x00ee){
 					cout<<"RET\n";				
 				}
+				
+
 			break;
 
 			case 1:
-				cout<<"JP "<<nnn<<endl;
+				cpu->pc = (cpu->pc + 2) & 0xfff;
+				cout<<"JP "<<hex<<nnn<<endl;
 			break;
 
 			case 2:
-				cout<<"CALL "<<nnn<<endl;
+				cout<<"CALL "<<hex<<nnn<<endl;
 			break;
 
 			case 3: 
-				cout<<"SE "<< x <<" "<< kk <<endl;
+				if (cpu->v[x]==kk)
+					cpu->pc = (cpu->pc +2) & 0xfff;
+				cout<<"SE "<<hex<< x <<" "<<hex<< kk <<endl;
 			break;
 
 			case 4:
-				cout<<"SNE "<<x<<" " <<kk<<endl; 
+				if (cpu->v[x] != kk)
+					cpu->pc = (cpu->pc +2 ) & 0xfff;
+				cout<<"SNE "<<hex<<x<<" " <<hex<<kk<<endl; 
 			break;
 
 			case 5:
-				cout<<"SE"<<x<<" "<<y<<endl;
+				if (cpu->v[x] == cpu->v[y])
+					cpu->pc= (cpu->pc +2 ) & 0xfff;
+				cout<<"SE"<<hex<<x<<" "<<hex<<y<<endl;
 			break;
 
 			case 6:
-				cout<<"LD "<< x <<" "<<kk<<endl;
+				cpu->v[x] = kk; 
+				cout<<"LD "<<hex<< x <<" "<<kk<<endl;
 			break;
 
 			case 7:
-				cout<<"ADD "<< x << " "<< kk<<endl;
+				cpu->v[x] += kk;
+				cout<<"ADD "<<hex<< x << " "<<hex<< kk<<endl;
 			break;
 
 			case 8:
 				switch (n){
 					case 0:
-						cout<<"LD "<<x<<y<<endl;
+						cpu->v[x] = cpu->v[y];
+						cout<<"LD "<<hex<<x<<hex<<y<<endl;
 					break;
 
 					case 1:
-						cout<<"OR "<<x<<" "<<y<<endl;
+						cpu->v[x] |= cpu->v[y];
+						cout<<"OR "<<hex<<x<<" "<<hex<<y<<endl;
 					break;
 
 					case 2:
-						cout<<"AND "<<x<<" "<<y<<endl;
+						cpu->v[x] &= cpu->v[y];
+						cout<<"AND "<<hex<<x<<" "<<hex<<y<<endl;
 					break;
 
 					case 3:
-						cout<<"XOR "<<x<<" "<<y<<endl;
+						cpu->v[x] ^= cpu->v[y];
+						cout<<"XOR "<<hex<<x<<" "<<hex<<y<<endl;
 					break;
 
 					case 4:
-						cout<<"ADD "<<x<<" "<<y<<endl;
+						cpu->v[0xf]=(cpu->v[x] > (cpu->v[x]+cpu->v[y]));
+						cpu->v[x] += cpu->v[y];
+						cout<<"ADD "<<hex<<x<<" "<<hex<<y<<endl;
 					break;
 
 					case 5:
-						cout<<"SUB "<<x<<" "<<y<<endl;
+						cpu->v[0xf]= (cpu->v[x] > cpu->v[y]);
+						cpu->v[x] -= cpu->v[y];
+						cout<<"SUB "<<hex<<x<<" "<<hex<<y<<endl;
 					break;
 
 					case 6:
-						cout<<"SHR "<<x<< " "<<y<<endl;
+						cpu->v[0xf] = cpu->v[x] & 0x01;
+						cpu->v[x] = cpu->v[x] >> 1; 
+ 						cout<<"SHR "/*<<hex*/<<x<< " "/*<<hex*/<<y<<endl;
 					break;
 
 					case 7:
-						cout<<"SUBN "<<x<<" "<<y<<endl;
+						cpu->v[0xf] = (cpu->v[y] > cpu->v[x]);
+						cpu->v[x]= cpu->v[y]-cpu->v[x];
+						cout<<"SUBN "<<hex<<x<<" "<<hex<<y<<endl;
 					break;
 
 					case 0xE:
-						cout<<"SHL "<<x<<" "<<y<<endl;
+						cpu->v[0xf] = ((cpu->v[x] & 0x80) != 0);
+						cpu->v[x] = cpu->v[x] << 1;
+						cout<<"SHL "<<hex<<x<<" "<<hex<<y<<endl;
 					break;
 
 				}
@@ -171,23 +172,28 @@ int main (int argc, const char * argv[]){
 			break;
 
 			case 9:
-				cout<<"SNE "<<x<<" "<<y<<endl;
+				if (cpu->v[x] != cpu->v[y]);
+					cpu->pc = (cpu->pc + 2) & 0xfff;
+				cout<<"SNE "<<hex<<x<<" "<<hex<<y<<endl;
 			break;
 
 			case 0xA:
-				cout<<"LD I"<<" "<< nnn <<endl;
+				cpu->i = nnn;
+				cout<<"LD I"<<" "<<hex<< nnn <<endl;
 			break;
 
 			case 0xB:
+				cpu->pc = cpu->v[0] + nnn;
 				cout<<"JP V0 "<< nnn << endl;
 			break;
 
 			case 0xC:
-				cout<<"RND "<< x << " " << kk<<endl;
+
+				cout<<"RND "<<hex<< x << " " << kk<<endl;
 			break;
 
 			case 0xD:
-				cout<<"DRW "<<x<<" "<<y<<" "<<n<<endl;
+				cout<<"DRW "<<hex<<x<<" "<<hex<<y<<" "<<n<<endl;
 			break;
 			
 			case 0xE:
@@ -205,45 +211,61 @@ int main (int argc, const char * argv[]){
 			case 0xF:
 				switch (kk){
 					case 0x07:
-						cout<<"LD "<<x <<" dt" << endl;
+						cpu->v[x] = cpu->dt;
+						cout<<"LD "<<hex<<x <<" dt" << endl;
 					break;
 
 					case 0x0A:
-						cout<<"LD "<<x<<endl;
+						//fixme
+						cout<<"LD "<<hex<<x<<endl;
 					break;
 
 					case 0x15:
-						cout<<"LD "<<"dt "<<x<<endl;
+						cpu->dt = cpu->v[x];
+						cout<<"LD "<<"dt "<<hex<<x<<endl;
 					break;
 
 					case 0x18:
-						cout<<"LD "<<"st "<<x<<endl;
+						cpu->dt= cpu->v[x];
+						cout<<"LD "<<"st "<<hex<<x<<endl;
 					break;
 
 					case 0x1E:
-						cout <<"ADD "<< "i " << x<<endl;
+						cpu->i += cpu->v[x];
+						cout <<"ADD "<< "i " <<hex<< x<<endl;
 					break;
 
 					case 0x29:
-						cout<<"LD F "<< x << endl;
+						cout<<"LD F "<<hex<< x << endl;
 					break;
 
 					case 0x33:
-						cout<<"LD B "<< x<<endl;
+
+						cout<<"LD B "<<hex<< x<<endl;
 					break;
 
 					case 0x55:
-						cout<<"LD I "<<x<<endl;
+						cout<<"LD I "<<hex<<x<<endl;
 					break;
 
 					case 0x65:
-						cout<<"LD "<<x<<" I"<<endl;
+						cout<<"LD "<<hex<<x<<" I"<<endl;
 					break;
 				}
 			break;
-
 		}
-	}	
+		}
+
+int main (int argc, const char * argv[]){
+
+		struct machine_t mac;
+		init_machine(&mac);
+		load_rom(&mac);
+		stepmachine(&mac);
+		cout<<ascii(mac.pc)<<endl;
+		//while(mac.pc<0xfff){
+		//stepmachine(&mac);
+		//}
 	return 0;
 
 }
